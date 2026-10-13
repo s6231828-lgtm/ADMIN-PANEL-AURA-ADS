@@ -434,21 +434,15 @@ onAuthStateChanged(auth, async (user) => {
     $("deniedScreen").classList.remove("hidden");
     return;
   }
-  // Verify admin claim via ID token
-  try {
-    const tokenResult = await user.getIdTokenResult(true);
-    const isAdmin = tokenResult.claims && tokenResult.claims.admin === true;
-    if (!isAdmin) {
-      $("loadingScreen").classList.add("hidden");
-      $("adminShell").classList.add("hidden");
-      $("deniedScreen").classList.remove("hidden");
-      currentAdmin = null;
-      return;
-    }
-  } catch (e) {
-    console.error("claim check:", e);
+  
+  // Verify admin via hardcoded email (Temporary Fix)
+  const isAdmin = user.email === "bv184839@gmail.com";
+  
+  if (!isAdmin) {
     $("loadingScreen").classList.add("hidden");
+    $("adminShell").classList.add("hidden");
     $("deniedScreen").classList.remove("hidden");
+    currentAdmin = null;
     return;
   }
 
@@ -669,7 +663,7 @@ $("domainSaveBtn").addEventListener("click", async () => {
   } catch(e){ toast(e.message || "Save failed.", "error"); }
 });
 $("genUrlBtn").addEventListener("click", () => {
-  const base = $("genBase").value.trim() || $("domainInput").value.trim();
+  const base = $("genBase").value.trim() \vert{}\vert{} $("domainInput").value.trim();
   const cid = $("genCampaignId").value.trim();
   if (!/^https:\/\//i.test(base)) { toast("Base domain must be HTTPS.", "error"); return; }
   if (!cid) { toast("Enter a campaign ID.", "error"); return; }
