@@ -365,6 +365,9 @@ const auth = getAuth(app);
 const db = getDatabase(app);
 const functions = getFunctions(app, "asia-south1");
 
+/* ✅ ADDED — authorized admin Gmail(s) */
+const ADMIN_EMAILS = ["bv184839@gmail.com"];
+
 try {
   initializeAppCheck(app, {
     provider: new ReCaptchaV3Provider("RECAPTCHA_V3_SITE_KEY_REPLACE_ME"),
@@ -434,15 +437,24 @@ onAuthStateChanged(auth, async (user) => {
     $("deniedScreen").classList.remove("hidden");
     return;
   }
-  
-  // Verify admin via hardcoded email (Temporary Fix)
-  const isAdmin = user.email === "bv184839@gmail.com";
-  
-  if (!isAdmin) {
+  // Verify admin claim via ID token
+  try {
+    const tokenResult = await user.getIdTokenResult(true);
+    /* ✅ ADDED — custom claim OR whitelisted Gmail dono mein se koi ek chalega */
+    const email = (user.email || "").toLowerCase();
+    const isAdmin = (tokenResult.claims && tokenResult.claims.admin === true)
+                 || ADMIN_EMAILS.includes(email);
+    if (!isAdmin) {
+      $("loadingScreen").classList.add("hidden");
+      $("adminShell").classList.add("hidden");
+      $("deniedScreen").classList.remove("hidden");
+      currentAdmin = null;
+      return;
+    }
+  } catch (e) {
+    console.error("claim check:", e);
     $("loadingScreen").classList.add("hidden");
-    $("adminShell").classList.add("hidden");
     $("deniedScreen").classList.remove("hidden");
-    currentAdmin = null;
     return;
   }
 
@@ -663,7 +675,7 @@ $("domainSaveBtn").addEventListener("click", async () => {
   } catch(e){ toast(e.message || "Save failed.", "error"); }
 });
 $("genUrlBtn").addEventListener("click", () => {
-  const base = $("genBase").value.trim() \vert{}\vert{} $("domainInput").value.trim();
+  const base = $("genBase").value.trim() || $("domainInput").value.trim();
   const cid = $("genCampaignId").value.trim();
   if (!/^https:\/\//i.test(base)) { toast("Base domain must be HTTPS.", "error"); return; }
   if (!cid) { toast("Enter a campaign ID.", "error"); return; }
